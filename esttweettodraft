@@ -1,0 +1,47 @@
+##! /usr/local/bin/python
+
+import sys
+import json
+import codecs
+import re
+
+(infilename, outfilename) = sys.argv[1:]
+
+with open(infilename, "r") as fin:
+    jsonobj = json.load(fin)
+
+with codecs.open(outfilename, "w", "UTF-8") as fout:
+    fout.write("@uri=https://twitter.com/%s/status/%s\n" %
+               (jsonobj["user"]["screen_name"], jsonobj["id_str"]))
+    if len(jsonobj["text"]) < 64:
+        title = jsonobj["text"]
+    else:
+        title = jsonobj["text"][:(64-3)] + "..."
+    title = re.sub(r'\n', r' ', title, re.MULTILINE)
+    fout.write("@title=%s\n" %
+               (title))
+    fout.write("@size=%d\n" %
+               (len(jsonobj["text"])))
+    fout.write("@author=@%s %s\n" %
+               (jsonobj["user"]["screen_name"], jsonobj["user"]["name"]))
+    ts = jsonobj["created_at"].split(" ")
+    fout.write("@cdate=%s, %s %s %s %s %s\n" %
+               (ts[0], ts[2], ts[1], ts[5], ts[3], ts[4]))
+    fout.write("@mdate=%s, %s %s %s %s %s\n" %
+               (ts[0], ts[2], ts[1], ts[5], ts[3], ts[4]))
+    if jsonobj["in_reply_to_status_id"]:
+        fout.write("in_reply_to=https://twitter.com/%s/status/%s\n" %
+                   (jsonobj["in_reply_to_screen_name"],
+                    jsonobj["in_reply_to_status_id_str"]))
+    fout.write("lang=%s\n" %
+               (jsonobj["lang"]))
+    fout.write("source=%s\n" %
+               (jsonobj["source"]))
+    fout.write("\n")
+    # body
+    fout.write("%s\n" %
+               jsonobj["text"])
+    # hidden texts
+    for url in jsonobj["entities"]["urls"]:
+        fout.write("\t%s\n" %
+                   (url["expanded_url"]))
