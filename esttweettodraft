@@ -13,15 +13,19 @@ with open(infilename, "r") as fin:
 with codecs.open(outfilename, "w", "UTF-8") as fout:
     fout.write("@uri=https://twitter.com/%s/status/%s\n" %
                (jsonobj["user"]["screen_name"], jsonobj["id_str"]))
-    if len(jsonobj["text"]) < 64:
-        title = jsonobj["text"]
+    if "full_text" in jsonobj:
+        texttag = "full_text"
     else:
-        title = jsonobj["text"][:(64-3)] + "..."
+        texttag = "text"
+    if len(jsonobj[texttag]) < 64:
+        title = jsonobj[texttag]
+    else:
+        title = jsonobj[texttag][:(64-3)] + "..."
     title = re.sub(r'\n', r' ', title, re.MULTILINE)
     fout.write("@title=%s\n" %
                (title))
     fout.write("@size=%d\n" %
-               (len(jsonobj["text"])))
+               (len(jsonobj[texttag])))
     fout.write("@author=@%s %s\n" %
                (jsonobj["user"]["screen_name"], jsonobj["user"]["name"]))
     ts = jsonobj["created_at"].split(" ")
@@ -40,7 +44,7 @@ with codecs.open(outfilename, "w", "UTF-8") as fout:
     fout.write("\n")
     # body
     fout.write("%s\n" %
-               jsonobj["text"])
+               jsonobj[texttag])
     # hidden texts
     for url in jsonobj["entities"]["urls"]:
         fout.write("\t%s\n" %
